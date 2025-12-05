@@ -1,8 +1,6 @@
 close all;
 clc;
 clear;
-% cd('C:\Program Files\MATLAB\cvx');
-% cvx_setup;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 1-the parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -165,12 +163,13 @@ num_V2G_EV=num_EV-num_CHG_EV; % number of V2G EVs
 
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  2-load EVs Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-load EV_info.txt;
-EV_info=EV_info(1:num_EV,:);  % keep only the num_Ev rows
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  2-load EVs Data + Solar data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+load dataset/EV_info.txt;
+load dataset/Solar.txt;
 
-% Create charging interval-matrix (F) 
-F=zeros(num_EV, num_slot);
+%%%%% EV-DATA %%%%%
+EV_info=EV_info(1:num_EV,:);  % keep only the num_Ev rows
+F=zeros(num_EV, num_slot); % Create charging interval-matrix (F) 
 for i=1:num_EV
     for j=EV_info(i,1):EV_info(i,2)
         F(i,j)=1;
@@ -178,6 +177,20 @@ for i=1:num_EV
 end
 F1=reshape(F',1,[]);
 
+%%%%% SOLAR-DATA %%%%%
+solar_raw = Solar;        
+clear solar;              
+num_groups = size(solar_raw, 1);
+Solar = struct();
+for g = 1:num_groups
+    Solar(g).group_id   = solar_raw(g, 1); % Group_id
+    Solar(g).efficiency = solar_raw(g, 2); % efficiency
+    Solar(g).panel_area = solar_raw(g, 3); % Panel_area
+    Solar(g).I_solar = solar_raw(g, 4:end); % Irradiance values (24 hours)
+    Solar(g).P_pv_max = Solar(g).efficiency * Solar(g).panel_area .* Solar(g).I_solar / 1000;  % Convert irradiance → PV max power (kW)
+end
+
+dasasdsa;
 
 
 % the EV charging pattern

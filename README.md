@@ -38,7 +38,7 @@ The cited IEEE paper proposes a convex optimization framework that schedules EV 
 
 ## Global vs. Local Scheduling (Paper Summary)
 
-### **1️⃣ Global Optimization (Offline CVX Model)**
+### **1 Global Optimization (Offline CVX Model)**
 
 Solves a full-horizon convex problem using complete information for all EVs.
 This produces a **benchmark optimal solution** but is computationally expensive for large fleets.
@@ -50,7 +50,7 @@ Output matrices:
 
 ---
 
-### **2️⃣ Local Optimization (Real-Time MPC with Grouping)**
+### **2 Local Optimization (Real-Time MPC with Grouping)**
 
 A scalable method proposed in the paper:
 
@@ -100,8 +100,10 @@ Is possible to have an overview of the main data_structure (including code workf
 
 Follow CVX instructions at: [https://cvxr.com/cvx/](https://cvxr.com/cvx/)
 
-### 2. Run optimizer
+### 2. Activate cvx
 
 ```matlab
-G_Main_cvx
+cd $cxv_directory
+cvx_setup
+cd $code_directory
 ```
