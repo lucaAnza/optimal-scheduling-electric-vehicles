@@ -70,7 +70,9 @@ Output matrices:
 
 ## Extensions Implemented in This Repository
 
-Beyond the original IEEE paper, this project introduces new data and constraint related to them.
+Beyond the original IEEE paper, this project introduces additional data structures and new optimization constraints related to solar energy production. Each group is assigned a unique solar forecast derived from its geographic location and photovoltaic panel size, resulting in different irradiance profiles and renewable availability. These extensions allow the model to incorporate weather-driven variability and integrate localized solar generation directly into both the global and local EV scheduling strategies.
+
+![alt text](image-2.png)
 
 ### Maths
 

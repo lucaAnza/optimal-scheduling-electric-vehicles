@@ -76,7 +76,7 @@ A2_b=zeros(num_slot, num_slot);
 A2=[A2_b A2_a];
     
 A_a=A1-A2;  % the matrix for the first equality constraint
-clear A1 A2 A1_a A2_a A2_b;
+% clear A1 A2 A1_a A2_a A2_b B_1  temp_1;  % Clean all temporary variable
 
 %%%%%% 2. the second equality constarint
 B_1=zeros(num_EV, num_OptVar-1*num_slot);
@@ -86,7 +86,7 @@ end
 temp_1=zeros(num_EV, num_slot);
 B1=[temp_1 B_1];    % the matrix for the second equality constraint
 b_b=(Cap_battery/tau)*ones(num_EV,1)-Current_EV(:,3);% the matrix for the second equality constraint
-clear  B_1  temp_1; 
+
     
 % % combine the equality matrix
 % Eq_left=[A_a' B1']';
@@ -163,8 +163,8 @@ cvx_begin
     minimize(  k_0*sum(pow_p(x(1:num_slot),1)) + (k_1/2)*sum(pow_p(x(1:num_slot),2)) + beta*sum(square(F1)*square(x(num_slot+1:num_OptVar))) )
     Eq_L * x == Eq_R;
     InEq_L * x <= InEq_R;
-    x >= x_lb;
-    x <= x_ub;
+    x >= x_lb;  % 7e + 7f
+    x <= x_ub;  % 7e + 7fq
 cvx_end
 
  
