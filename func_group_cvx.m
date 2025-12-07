@@ -161,23 +161,13 @@ end
 cvx_begin
     variable x(num_OptVar);
     minimize(  k_0*sum(pow_p(x(1:num_slot),1)) + (k_1/2)*sum(pow_p(x(1:num_slot),2)) + beta*sum(square(F1)*square(x(num_slot+1:num_OptVar))) )
-%     minimize( quad_form(x,H_1) )
     Eq_L * x == Eq_R;
     InEq_L * x <= InEq_R;
     x >= x_lb;
     x <= x_ub;
 cvx_end
 
-
-% [x,f_obj,exitflag,output] = quadprog(H_1,f_1,InEq_L,InEq_R,Eq_L,Eq_R,x_lb,x_ub); % equality + inequality constraint
-
-% % the original objective function value
-% obj_value=0;
-% for i=1:num_slot
-%    obj_value=obj_value + k_con* (x(i)^(theta+1) - L_b_mic(i)^(theta+1));
-% end
-
-% 
+ 
 %%%%%%%%%%  3. organize and verify the results %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 x_temp=x(num_slot+1:num_OptVar,1);
 x_Matrix = reshape(x_temp,num_slot, num_EV);

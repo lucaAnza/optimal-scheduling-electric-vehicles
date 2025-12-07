@@ -70,13 +70,29 @@ Output matrices:
 
 ## Extensions Implemented in This Repository
 
-Beyond the original IEEE paper, this project introduces optional enhancements such as:
+Beyond the original IEEE paper, this project introduces new data and constraint related to them.
 
-### ☀️ Solar PV Integration
+### Maths
 
-$z_j = L_j^{bF} - P_j^{PV} + \sum_m x_{mj} f_{mj}$
+#### New objective function into [local optmization](#Local-optimization) 
+
+$\min_{\mathbf{x},\,\mathbf{z}} \quad  \sum_{j \in \mathcal{W}_k^{(i)}} \left[ \left( k_0 z_j + \frac{k_1}{2} z_j^2 \right)-\left( k_0 L_j^{bF} + \frac{k_1}{2} (L_j^{bF})^2 \right)\right]\;+\;C_{P_k}\, A_k$
+
+
+#### New constraints into [local optmization](#Local-optimization) 
+
+$z_j = L_j^{bF} - P_j^{PV} + \sum_m x_{mj} f_{mj} , \qquad j \in \mathcal{W}_k^{(i)}$
+
+$- z_j \le 0, \qquad j \in \mathcal{W}_k^{(i)}$
 
 ---
+
+### Matlab - code
+
+We obtain the solar data from `Solar.txt` and then insert into a variable(`Solar`):  
+![alt text](image-1.png)
+
+
 
 ## Output Data Structures
 

@@ -178,6 +178,7 @@ end
 F1=reshape(F',1,[]);
 
 %%%%% SOLAR-DATA %%%%%
+cost_panel_for_msquare = 30;   % cost panel area for m^2
 solar_raw = Solar;        
 clear solar;              
 num_groups = size(solar_raw, 1);
@@ -187,10 +188,9 @@ for g = 1:num_groups
     Solar(g).efficiency = solar_raw(g, 2); % efficiency
     Solar(g).panel_area = solar_raw(g, 3); % Panel_area
     Solar(g).I_solar = solar_raw(g, 4:end); % Irradiance values (24 hours)
-    Solar(g).P_pv_max = Solar(g).efficiency * Solar(g).panel_area .* Solar(g).I_solar / 1000;  % Convert irradiance → PV max power (kW)
+    Solar(g).P_pv_available = Solar(g).efficiency * Solar(g).panel_area .* Solar(g).I_solar / 1000;  % Convert irradiance → PV max power (kW)
 end
 
-dasasdsa;
 
 
 % the EV charging pattern
@@ -609,44 +609,7 @@ for i=1:num_EV
     end
 end        
         
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%  Naive charging scheme without discharging %%%
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% N_inital_en(:,1)=E_Charged(:,1); % the initial energy
-% N_inital_en(:,2)=Cap_battery-N_inital_en(:,1); % the energy requied to be charged
-% N_x_Matrix=zeros(num_EV,num_slot);
-% % the charging rate allocation
-% for i=1:num_EV
-%     temp_11(i,1)=N_inital_en(i,1);  % accumulated energy
-%     for j=1: num_slot
-%         if F(i,j)==1
-%             temp_11(i,1)=temp_11(i,1)+P_max;
-%             if temp_11(i,1)<=Cap_battery
-%                 N_x_Matrix(i,j)=P_max;
-%             else
-%                 N_x_Matrix(i,j)=Cap_battery-(temp_11(i,1)-P_max);
-%                 break;
-%             end
-%         end
-%     end
-% end
-% % the evolution of energy level for each EV
-% N_Energy_variation=zeros(num_EV,num_slot+1);
-% for i=1:num_EV
-%     N_Energy_variation(i,1)=N_inital_en(i,1);  % the initial energy
-%     for j=1:num_slot
-%         N_Energy_variation(i,j+1)=N_Energy_variation(i,j)+F(i,j)*N_x_Matrix(i,j);
-%     end
-% end             
-% % the charged load
-% N_Charged_Load=zeros(num_slot,3); % 1) the base load, 2) the charged load, 3) the total load (from EV rates), 
-% N_Charged_Load(:,1)=L_b_mic; % the base load
-% for i=1:num_slot
-%     for j=1:num_EV
-%         N_Charged_Load(i,2)=N_Charged_Load(i,2)+N_x_Matrix(j,i)*F(j,i);
-%     end
-%     N_Charged_Load(i,3)=N_Charged_Load(i,1)+N_Charged_Load(i,2); % total load calculated from charged loads of individual EVs
-% end
+
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%  Naive charging scheme with discharging %%% revised on June 03,
