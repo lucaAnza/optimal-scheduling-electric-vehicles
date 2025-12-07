@@ -58,27 +58,28 @@ F1=reshape(F',1,[]);
 num_OptVar=1*num_slot+num_slot*num_EV;
 
 
-%%%%%% 1.first equality constarint
-b_a=L_b_mic; % the matrix for the first equality constraint
+%%%%%% 1.first equality constarint (7b) 
+% DEFINING A_a using A1,A2
 A1_a=zeros(num_slot, num_OptVar-1*num_slot);
 A1=[eye(num_slot) A1_a];
-
 A2_a=zeros(num_slot, num_OptVar-1*num_slot);
-s_temp=0;
 for i=1:num_slot
     for j=1:num_EV
-        A2_a(i, (j-1)*num_slot+i)=F(j,i);
-        % fprintf('Assign F(%g,%g)=%g, to A2_a(%g, %g).\n',j,i,F(j,i),i,(j-1)*num_slot+1);
-        s_temp=s_temp+F(j,i);
+        A2_a(i, (j-1)*num_slot+i)=F(j,i);  % DEBUG : fprintf('Assign F(%g,%g)=%g, to A2_a(%g, %g).\n',j,i,F(j,i),i,(j-1)*num_slot+1);
     end
 end
 A2_b=zeros(num_slot, num_slot);
 A2=[A2_b A2_a];
-    
-A_a=A1-A2;  % the matrix for the first equality constraint
-% clear A1 A2 A1_a A2_a A2_b B_1  temp_1;  % Clean all temporary variable
 
-%%%%%% 2. the second equality constarint
+% FINAL MATRIX  (%A_a * x  = b_a)
+A_a=A1-A2;  
+b_a=L_b_mic;
+Eq_L=A_a;
+Eq_R=b_a;
+
+
+
+%%%%%% 2. the second equality constarint (NOT PRESENT IN THE PAPER + NOT IMPLEMENTED)
 B_1=zeros(num_EV, num_OptVar-1*num_slot);
 for i=1:num_EV
     B_1(i,(i-1)*num_slot+1:(i-1)*num_slot+num_slot)=F(i,:);
@@ -86,18 +87,11 @@ end
 temp_1=zeros(num_EV, num_slot);
 B1=[temp_1 B_1];    % the matrix for the second equality constraint
 b_b=(Cap_battery/tau)*ones(num_EV,1)-Current_EV(:,3);% the matrix for the second equality constraint
-
-    
-% % combine the equality matrix
-% Eq_left=[A_a' B1']';
-% Eq_right=[b_a' b_b']';
+%Eq_left=[A_a' B1']';
+%Eq_right=[b_a' b_b']';
 
 
-% the equlity constraint ************
-Eq_L=A_a;
-Eq_R=b_a;
-
-%%%%%% 3.  the first inequality
+%%%%%% 3.  the first inequality (7c - LEFT)
 In_1=zeros(num_EV*num_slot, num_OptVar);
 for i=1:num_slot
     for j=1:num_EV
@@ -111,7 +105,7 @@ for i=1:num_slot
     In_b1( (i-1)*num_EV+1:(i-1)*num_EV+num_EV, 1 )= (1/tau)*Current_EV(:,3); 
 end
 
-%%%%%% 4.  the second inequality
+%%%%%% 4.  the second inequality (7c - RIGHT ????? IT THINK)
 In_2=-1*In_1; % the second inequality, left side
 In_b2=zeros(num_EV*num_slot, 1);    % the second inequality, right side, [EV1_slot1, EV2_slot1, ..., EV1_slot2, EV2_slot2,...]'
 temp_b2=Cap_battery_org - Current_EV(:,3);
