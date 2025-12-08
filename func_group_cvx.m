@@ -1,4 +1,5 @@
-function x=func_group_cvx(Current_T, Par_set, Current_EV, Current_slot, P_L_b_mic)
+function x=func_group_cvx(Current_T, Par_set, Current_EV, Current_slot, P_L_b_mic , Solar , cost_panel_for_msquare , group_id)  % Solar,cost_panel_for_msquare -> extension
+
 
 %     save T_Par_set.txt Par_set -ascii;
 %     save T_Current_EV.txt Current_EV -ascii;
@@ -73,7 +74,8 @@ A2=[A2_b A2_a];
 
 % FINAL MATRIX  (%A_a * x  = b_a)
 A_a=A1-A2;  
-b_a=L_b_mic;
+b_a = L_b_mic; % OLD
+% b_a = L_b_mic - P_pv_j;   % NEW solar-aware base load;
 Eq_L=A_a;
 Eq_R=b_a;
 
@@ -117,48 +119,58 @@ end
 In_3=-1*B1; % the third inequality, left side
 In_b3=-1*b_b;    % the third inequality, right side, 
 
-% combine all the inequality constraints
-InEq_L=[In_1' In_2' In_3']';
-InEq_R=[In_b1' In_b2' In_b3']';
+%%%%%% 6. the fourth inequality NEW CONSTRAINT (zj >= 0)
+Z_nonneg_L = -eye(num_slot);
+Z_nonneg_R = zeros(num_slot,1);
+
+%%%% combine all the inequality constraints %%%%
+InEq_L = [In_1 ; In_2 ; In_3 ];
+InEq_R = [In_b1 ; In_b2 ; In_b3 ];
+
+% NEW - TO CHECK
+%InEq_L = [In_1 ; In_2 ; In_3 ; Z_nonneg_L];
+%InEq_R = [In_b1 ; In_b2 ; In_b3 ; Z_nonneg_R];
+
+
 
 %%%%%% 6.  solve the optimization problem using quadratic programming: [x,f_obj] = quadprog(H,f,A,b,Aeq,beq,lb,ub) 
-% the initial value
-x_initial=zeros(num_OptVar,1);
-x_initial(1:num_slot,1)=L_b_mic;
+
 % lower and upper bound
 x_lb=zeros(num_OptVar,1); % the lower bound for EV charging
-
-% the lower bound for V2G
-x_lb(num_slot+1:num_OptVar,1)=-1*P_max*ones(num_OptVar-num_slot,1);
-% distinguish the CHG Evs and V2G EVs ( changed here, on Dec 16, 2010)
-for i=1:length(Current_EV(:,1))
+x_lb(num_slot+1:num_OptVar,1)=-1*P_max*ones(num_OptVar-num_slot,1); % the lower bound for V2G
+for i=1:length(Current_EV(:,1)) % distinguish the CHG Evs and V2G EVs ( changed here, on Dec 16, 2010)
     if Current_EV(i,7)==0
         for j=1:num_slot
            x_lb(i*num_slot+j,1)=0; 
         end
     end
 end
-
-x_ub=P_max*ones(num_OptVar,1);
+x_ub=P_max*ones(num_OptVar,1); % upper bound
 for i=1:num_slot
     x_ub(i,1)=2*omega;
 end
+
+% TODO : CHECK IF IS POSSIBLE TO DELETE THIS -----------------
 % the objective function is changed to f=z_1^2+z_2^2+...
+% the initial value
+x_initial=zeros(num_OptVar,1);
+x_initial(1:num_slot,1)=L_b_mic;
 f_1=zeros(num_OptVar,1);
 H_1=zeros(num_OptVar,num_OptVar);
 for i=1:num_slot
     H_1(i,i)=2;
 end
+% ---------------------------------------------------------------
 
 %%%%%%%%%%  2. solve the optimization problem using CVX tool %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % quadratic program
 cvx_begin
     variable x(num_OptVar);
     minimize(  k_0*sum(pow_p(x(1:num_slot),1)) + (k_1/2)*sum(pow_p(x(1:num_slot),2)) + beta*sum(square(F1)*square(x(num_slot+1:num_OptVar))) )
-    Eq_L * x == Eq_R;
+    Eq_L * x == Eq_R;     % 7b
     InEq_L * x <= InEq_R;
     x >= x_lb;  % 7e + 7f
-    x <= x_ub;  % 7e + 7fq
+    x <= x_ub;  % 7e + 7f
 cvx_end
 
  

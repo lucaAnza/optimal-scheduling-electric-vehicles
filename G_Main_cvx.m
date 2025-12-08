@@ -181,9 +181,9 @@ F1=reshape(F',1,[]);
 cost_panel_for_msquare = 30;   % cost panel area for m^2
 solar_raw = Solar;        
 clear solar;              
-num_groups = size(solar_raw, 1);
+num_groups_solar = size(solar_raw, 1);
 Solar = struct();
-for g = 1:num_groups
+for g = 1:num_groups_solar
     Solar(g).group_id   = solar_raw(g, 1); % Group_id
     Solar(g).efficiency = solar_raw(g, 2); % efficiency
     Solar(g).panel_area = solar_raw(g, 3); % Panel_area
@@ -462,6 +462,14 @@ end
 group_size=100; % number of EVs in a group
 group_num=ceil(num_EV/group_size); % the group number
 
+% Check consistency with Solar.txt Data
+if group_num ~= num_groups_solar
+    error(['Mismatch between EV groups (%d) and Solar groups (%d). ' ...
+           'Each EV group must have a corresponding Solar group.'], ...
+           group_num, num_groups_solar);
+end
+
+
 %%%%% 1. Shuffle the EVs
 temp_ID=EV_Matrix(:,1);   
 temp_No=shuffle(temp_ID); 
@@ -541,7 +549,7 @@ for gg=1:group_num
             % % case 1): EV charging only 
             %    x=func_EV_Chg(Current_T, Par_set, Current_EV, Current_slot, P_L_b_mic);
             % % case 2): V2G
-            x=func_group_cvx(Current_T, Par_set, Current_EV, Current_slot, P_L_b_mic);  
+            x=func_group_cvx(Current_T, Par_set, Current_EV, Current_slot, P_L_b_mic , Solar , cost_panel_for_msquare , gg);  
         end
 
         % update the EV status: Rate_Matrix_g
