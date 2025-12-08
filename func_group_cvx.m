@@ -50,11 +50,17 @@ for i=1:num_EV
 end
 F1=reshape(F',1,[]);
 
+% NEW : Obtain the power for the actual group + the panel area
+disp(Current_T);
+disp(length(Current_slot));
+P_pv_available_full = Solar(group_id).P_pv_available;
+P_pv_available = P_pv_available_full(Current_T : Current_T + length(Current_slot) - 1)';
+panelArea = Solar(group_id).panel_area;
+
+
+
 
 %%%%%%%%%%  1. optimization (EV Charging) - Modelling %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
 % optimization/decision variables x=[z1, z2, ..., z_24, x11, x12, ...., x_100,24]',a colum vextor
 num_OptVar=1*num_slot+num_slot*num_EV;
 
@@ -74,26 +80,14 @@ A2=[A2_b A2_a];
 
 % FINAL MATRIX  (%A_a * x  = b_a)
 A_a=A1-A2;  
-b_a = L_b_mic; % OLD
-% b_a = L_b_mic - P_pv_j;   % NEW solar-aware base load;
+% b_a = L_b_mic; % OLD
+b_a = L_b_mic - P_pv_available;   % NEW solar-aware base load;
 Eq_L=A_a;
 Eq_R=b_a;
 
 
 
-%%%%%% 2. the second equality constarint (NOT PRESENT IN THE PAPER + NOT IMPLEMENTED)
-B_1=zeros(num_EV, num_OptVar-1*num_slot);
-for i=1:num_EV
-    B_1(i,(i-1)*num_slot+1:(i-1)*num_slot+num_slot)=F(i,:);
-end
-temp_1=zeros(num_EV, num_slot);
-B1=[temp_1 B_1];    % the matrix for the second equality constraint
-b_b=(Cap_battery/tau)*ones(num_EV,1)-Current_EV(:,3);% the matrix for the second equality constraint
-%Eq_left=[A_a' B1']';
-%Eq_right=[b_a' b_b']';
-
-
-%%%%%% 3.  the first inequality (7c - LEFT)
+%%%%%% 2.  the first inequality (7c - LEFT)
 In_1=zeros(num_EV*num_slot, num_OptVar);
 for i=1:num_slot
     for j=1:num_EV
@@ -107,7 +101,7 @@ for i=1:num_slot
     In_b1( (i-1)*num_EV+1:(i-1)*num_EV+num_EV, 1 )= (1/tau)*Current_EV(:,3); 
 end
 
-%%%%%% 4.  the second inequality (7c - RIGHT ????? IT THINK)
+%%%%%% 3.  the second inequality (7c - RIGHT)
 In_2=-1*In_1; % the second inequality, left side
 In_b2=zeros(num_EV*num_slot, 1);    % the second inequality, right side, [EV1_slot1, EV2_slot1, ..., EV1_slot2, EV2_slot2,...]'
 temp_b2=Cap_battery_org - Current_EV(:,3);
@@ -115,21 +109,32 @@ for i=1:num_slot
     In_b2( (i-1)*num_EV+1:(i-1)*num_EV+num_EV, 1 )= (1/tau)*temp_b2; 
 end
 
-%%%%%% 5.  the third inequality
+%%%%%% 4.  the third inequality
+B_1=zeros(num_EV, num_OptVar-1*num_slot);
+for i=1:num_EV
+    B_1(i,(i-1)*num_slot+1:(i-1)*num_slot+num_slot)=F(i,:);
+end
+temp_1=zeros(num_EV, num_slot);
+B1=[temp_1 B_1];    % the matrix for the second equality constraint
+b_b=(Cap_battery/tau)*ones(num_EV,1)-Current_EV(:,3);% the matrix for the second equality constraint
 In_3=-1*B1; % the third inequality, left side
 In_b3=-1*b_b;    % the third inequality, right side, 
 
-%%%%%% 6. the fourth inequality NEW CONSTRAINT (zj >= 0)
-Z_nonneg_L = -eye(num_slot);
-Z_nonneg_R = zeros(num_slot,1);
+%%%%%% 5. the fourth inequality NEW CONSTRAINT (zj >= 0)
+In_z = zeros(num_slot, num_OptVar);  
+for j = 1:num_slot
+    In_z(j, j) = -1;   % -z_j <= 0  → z_j >= 0
+end
+In_bz = zeros(num_slot, 1);  % right-hand side (all zeros)
+
+
+%%%%%% The second equality constraint (NOT PRESENT IN THE PAPER + NOT IMPLEMENTED)
+%Eq_left=[A_a' B1']';
+%Eq_right=[b_a' b_b']';
 
 %%%% combine all the inequality constraints %%%%
-InEq_L = [In_1 ; In_2 ; In_3 ];
-InEq_R = [In_b1 ; In_b2 ; In_b3 ];
-
-% NEW - TO CHECK
-%InEq_L = [In_1 ; In_2 ; In_3 ; Z_nonneg_L];
-%InEq_R = [In_b1 ; In_b2 ; In_b3 ; Z_nonneg_R];
+InEq_L = [In_1 ; In_2 ; In_3 ; In_z];   %OLD : InEq_L = [In_1 ; In_2 ; In_3 ];
+InEq_R = [In_b1 ; In_b2 ; In_b3 ; In_bz];  %OLD : InEq_R = [In_b1 ; In_b2 ; In_b3 ];
 
 
 
@@ -166,9 +171,9 @@ end
 % quadratic program
 cvx_begin
     variable x(num_OptVar);
-    minimize(  k_0*sum(pow_p(x(1:num_slot),1)) + (k_1/2)*sum(pow_p(x(1:num_slot),2)) + beta*sum(square(F1)*square(x(num_slot+1:num_OptVar))) )
+    minimize(  k_0*sum(pow_p(x(1:num_slot),1)) + (k_1/2)*sum(pow_p(x(1:num_slot),2)) + beta*sum(square(F1)*square(x(num_slot+1:num_OptVar))) + (panelArea * cost_panel_for_msquare) )
     Eq_L * x == Eq_R;     % 7b
-    InEq_L * x <= InEq_R;
+    InEq_L * x <= InEq_R; % 7c + 7d
     x >= x_lb;  % 7e + 7f
     x <= x_ub;  % 7e + 7f
 cvx_end

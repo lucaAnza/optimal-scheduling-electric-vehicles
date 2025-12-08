@@ -72,7 +72,7 @@ Output matrices:
 
 Beyond the original IEEE paper, this project introduces additional data structures and new optimization constraints related to solar energy production. Each group is assigned a unique solar forecast derived from its geographic location and photovoltaic panel size, resulting in different irradiance profiles and renewable availability. These extensions allow the model to incorporate weather-driven variability and integrate localized solar generation directly into both the global and local EV scheduling strategies.
 
-![alt text](image-2.png)
+![alt text](src/image-2.png)
 
 ### Maths
 
@@ -92,7 +92,13 @@ $- z_j \le 0, \qquad j \in \mathcal{W}_k^{(i)}$
 ### Matlab - code
 
 We obtain the solar data from `Solar.txt` and then insert into a variable(`Solar`):  
-![alt text](image-1.png)
+![alt text](src/image-1.png)
+
+#### Plotting of energy production for each group_
+![alt text](src/energy_production.png)
+
+#### Plotting of solar irradiance_
+![alt text](src/solar_irradiance.png)
 
 
 

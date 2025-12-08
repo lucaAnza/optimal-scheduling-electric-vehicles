@@ -857,6 +857,34 @@ xlabel('Time (Hours)');
 legend('Globally optimal scheme','Locally optimal scheme','Equal allocation scheme','Location', 'NorthWest');
 title('The charging/discharging rate in globally optimal scheme');
 
+% % plot the power production of the solar panel (NEW)
+figure;
+PV_matrix = zeros(num_slot, num_groups_solar);
+for g = 1:num_groups_solar
+    PV_matrix(:, g) = Solar(g).P_pv_available(:);  % Ensure column format
+end
+PV_matrix = PV_matrix';
+plot(xx, PV_matrix);
+xlabel('Time Slot (Hour)');
+ylabel('PV Power [kW]');
+title('PV Power Output per Group');
+legendStrings = arrayfun(@(g) sprintf('Group %d', g), 1:num_groups_solar, 'UniformOutput', false);
+legend(legendStrings, 'Location', 'NorthWest');
+grid on;
+
+% % plot the solar irradiance data
+figure;
+Irr_matrix = zeros(num_slot, num_groups_solar);
+for g = 1:num_groups_solar
+    Irr_matrix(:, g) = Solar(g).I_solar(:);  % Ensure column format
+end
+plot(xx, Irr_matrix);
+xlabel('Time Slot (Hour)');
+ylabel('Solar Irradiance [W/m^2]');
+title('Solar Irradiance per Group');
+legend(legendStrings, 'Location', 'NorthWest');
+grid on;
+
 % save glabol_x_Matrix.txt v_x_Matrix -ascii;
 % save local_x_Matrix.txt x_Matrix -ascii;
 % save naive_x_Matrix.txt N_x_Matrix -ascii;
