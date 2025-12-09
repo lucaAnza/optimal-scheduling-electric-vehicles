@@ -221,6 +221,6 @@ for i=1:num_EV
     end
 end
 
-% returen the results
+% retur the results
 x=[];
 x=x_Matrix; % the charging rate at each interval

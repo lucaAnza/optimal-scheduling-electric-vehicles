@@ -8,7 +8,7 @@ clear;
 %%%%%%% 1-BASE_LOAD %%%%%%%%%
 
 % the base load vector for Toronto (data: Toronto 21/08/2009, temperature avg/max/min=22/25/20, unit=KW)
-L_b=[
+L_b_=[
 1648181.19
 1510114.92
 1404600.51
@@ -141,12 +141,15 @@ beta=0;
 % the constant multiplication
 % k_con=alfa/(omega^theta*(theta+1));
 
-% the basic price :  
+% the basic price model for electricty  
 price_basic=zeros(num_slot,1); % the price based on basic load
 for i=1:num_slot
    price_basic(i)=k_0+k_1* L_b_mic(i);
 end
 fprintf('The price, min price=%g, max price=%g.\n',min(price_basic), max(price_basic));
+
+
+
 
 %%%%%%% 4-BATTERY & CHARGING %%%%%%%%%
 Cap_battery_org=16; % in KWh (% EV battery capacity)
@@ -178,7 +181,7 @@ end
 F1=reshape(F',1,[]);
 
 %%%%% SOLAR-DATA %%%%%
-cost_panel_for_msquare = 30;   % cost panel area for m^2
+price_panel_for_msquare = 30;   % cost panel area for m^2
 solar_raw = Solar;        
 clear solar;              
 num_groups_solar = size(solar_raw, 1);
@@ -549,12 +552,12 @@ for gg=1:group_num
             % % case 1): EV charging only 
             %    x=func_EV_Chg(Current_T, Par_set, Current_EV, Current_slot, P_L_b_mic);
             % % case 2): V2G
-            x=func_group_cvx(Current_T, Par_set, Current_EV, Current_slot, P_L_b_mic , Solar , cost_panel_for_msquare , gg);  
+            x_group=func_group_cvx(Current_T, Par_set, Current_EV, Current_slot, P_L_b_mic , Solar , price_panel_for_msquare , gg);  
         end
 
         % update the EV status: Rate_Matrix_g
         for i=1:length(Current_EV(:,1))
-            Rate_Matrix_g(Current_EV(i,1),Current_T:Current_T+length(x(1,:))-1)=x(i,:);
+            Rate_Matrix_g(Current_EV(i,1),Current_T:Current_T+length(x_group(1,:))-1)=x_group(i,:);
         end
         % update the EV status: EV_Matrix
         for i=1:length(Current_EV(:,1))
@@ -588,7 +591,6 @@ for gg=1:group_num
 end  % end of gg iteration
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 8- Verify the results %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-x=[];
 x_Matrix=[];
 x_Matrix=Rate_Matrix;  % charging rate matrix: num_EV * num_slot
 % verify the charging load at each interval
@@ -599,7 +601,7 @@ for i=1:num_slot
         Charged_Load(i,2)=Charged_Load(i,2)+x_Matrix(j,i)*F(j,i);
     end
     Charged_Load(i,3)=Charged_Load(i,1)+Charged_Load(i,2); % total load calculated from charged loads of individual EVs
-%     Charged_Load(i,4)=x(i,1); % total load calculated from optimization variables z_i
+    Charged_Load(i,4)=x_group(i,1); % total load calculated from optimization variables z_i
     Charged_Load(i,5)=Charged_Load(i,4)-Charged_Load(i,3); % the difference of the results
     Charged_Load(i,6)=Charged_Load(i,5)/Charged_Load(i,1); % the relative error
 %     if abs(Total_Load(i,1)-Total_Load(i,2)) > 0.1
@@ -728,6 +730,19 @@ for i=1:num_slot
     end
     N_Charged_Load(i,3)=N_Charged_Load(i,1)+N_Charged_Load(i,2); % total load calculated from charged loads of individual EVs
 end
+
+% prepare the data for plotting (cost analysis)
+%xx=1:num_slot;
+%yy=zeros(group_num , num_slot);
+%for i=1:group_num
+    
+    %money_saved = Solar(i).P_pv_available * price_basic;
+    %yy(i,:) = money_saved ;
+
+% TODO : Analyse Charged_load for obtaining the data for the price
+
+    
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 8- Plot the results %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -872,7 +887,7 @@ legendStrings = arrayfun(@(g) sprintf('Group %d', g), 1:num_groups_solar, 'Unifo
 legend(legendStrings, 'Location', 'NorthWest');
 grid on;
 
-% % plot the solar irradiance data
+% % plot the solar irradiance data (NEW)
 figure;
 Irr_matrix = zeros(num_slot, num_groups_solar);
 for g = 1:num_groups_solar
@@ -884,6 +899,8 @@ ylabel('Solar Irradiance [W/m^2]');
 title('Solar Irradiance per Group');
 legend(legendStrings, 'Location', 'NorthWest');
 grid on;
+
+% % plot the cost include solar panel (NEW)
 
 % save glabol_x_Matrix.txt v_x_Matrix -ascii;
 % save local_x_Matrix.txt x_Matrix -ascii;
