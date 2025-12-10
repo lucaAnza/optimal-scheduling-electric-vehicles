@@ -8,7 +8,7 @@ clear;
 %%%%%%% 1-BASE_LOAD %%%%%%%%%
 
 % the base load vector for Toronto (data: Toronto 21/08/2009, temperature avg/max/min=22/25/20, unit=KW)
-L_b_=[
+L_b=[
 1648181.19
 1510114.92
 1404600.51
@@ -601,7 +601,7 @@ for i=1:num_slot
         Charged_Load(i,2)=Charged_Load(i,2)+x_Matrix(j,i)*F(j,i);
     end
     Charged_Load(i,3)=Charged_Load(i,1)+Charged_Load(i,2); % total load calculated from charged loads of individual EVs
-    Charged_Load(i,4)=x_group(i,1); % total load calculated from optimization variables z_i
+    % Charged_Load(i,4)=x_group(i,1); % total load calculated from optimization variables z_i
     Charged_Load(i,5)=Charged_Load(i,4)-Charged_Load(i,3); % the difference of the results
     Charged_Load(i,6)=Charged_Load(i,5)/Charged_Load(i,1); % the relative error
 %     if abs(Total_Load(i,1)-Total_Load(i,2)) > 0.1
@@ -731,15 +731,19 @@ for i=1:num_slot
     N_Charged_Load(i,3)=N_Charged_Load(i,1)+N_Charged_Load(i,2); % total load calculated from charged loads of individual EVs
 end
 
-% prepare the data for plotting (cost analysis)
-%xx=1:num_slot;
-%yy=zeros(group_num , num_slot);
-%for i=1:group_num
-    
-    %money_saved = Solar(i).P_pv_available * price_basic;
-    %yy(i,:) = money_saved ;
-
-% TODO : Analyse Charged_load for obtaining the data for the price
+% prepare the data for plotting solar data (cost analysis + production)
+PV_matrix = zeros(num_slot, num_groups_solar);
+for g = 1:num_groups_solar
+    PV_matrix(:, g) = Solar(g).P_pv_available(:);  % Ensure column format
+end
+PV_matrix = PV_matrix';
+solar_total_production = sum(PV_matrix , 1)';
+cost_of_all_panels = sum([Solar.panel_area]) * price_panel_for_msquare;
+avg = cost_of_all_panels/num_slot;
+cost_avg_panel_time_slot = avg * ones(1,num_slot)';
+expenses_hour_with_solar_panel = Charged_Load(:,3) .* price_basic;  % Expenses with solar panel
+expenses_hour_without_solar_panel = expenses_hour_with_solar_panel + ( solar_total_production .* price_basic);  % Expenses without solar panel
+money_saved_with_solar_panel = (expenses_hour_without_solar_panel - expenses_hour_with_solar_panel); % Money saved using solar panel (cost of panel not included)
 
     
 
@@ -874,11 +878,6 @@ title('The charging/discharging rate in globally optimal scheme');
 
 % % plot the power production of the solar panel (NEW)
 figure;
-PV_matrix = zeros(num_slot, num_groups_solar);
-for g = 1:num_groups_solar
-    PV_matrix(:, g) = Solar(g).P_pv_available(:);  % Ensure column format
-end
-PV_matrix = PV_matrix';
 plot(xx, PV_matrix);
 xlabel('Time Slot (Hour)');
 ylabel('PV Power [kW]');
@@ -901,6 +900,38 @@ legend(legendStrings, 'Location', 'NorthWest');
 grid on;
 
 % % plot the cost include solar panel (NEW)
+figure(10);
+set(gcf, 'Position', [200 200 1200 700]);
+
+% ----- Subplot 1: Expenses comparison -----
+subplot(3,1,1);
+plot(xx, expenses_hour_without_solar_panel); hold on;
+plot(xx, expenses_hour_with_solar_panel);
+plot(xx, cost_avg_panel_time_slot);
+ylabel('Expenses (€)');
+xlabel('Time slot');
+legend('Without Solar', 'With Solar', 'Avg Panel Cost per time slot', 'Location','Best');
+title('Expenses With and Without Solar Panels');
+grid on;
+
+% ----- Subplot 2: Money saved -----
+subplot(3,1,2);
+plot(xx, money_saved_with_solar_panel , Color='Green'); hold on;
+ylabel('Money Saved (€)');
+xlabel('Time slot');
+legend('Saved (no panel cost)' , 'Location','Best');
+title('Hourly Savings With Solar Panels');
+grid on;
+
+% ----- Subplot 3: Solar production -----
+subplot(3,1,3);
+plot(xx, solar_total_production);
+ylabel('PV Power (kW)');
+xlabel('Time slot');
+legend('Total Solar Production', 'Location','Best');
+title('Solar Production Over Time');
+grid on;
+sgtitle('Solar Impact on Costs and Production');
 
 % save glabol_x_Matrix.txt v_x_Matrix -ascii;
 % save local_x_Matrix.txt x_Matrix -ascii;

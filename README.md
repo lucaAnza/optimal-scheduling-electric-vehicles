@@ -97,8 +97,11 @@ We obtain the solar data from `Solar.txt` and then insert into a variable(`Solar
 #### Plotting of energy production for each group_
 ![alt text](src/energy_production.png)
 
-#### Plotting of solar irradiance_
+#### Plotting of solar irradiance
 ![alt text](src/solar_irradiance.png)
+
+#### Plotting expenses of solar panels
+![alt text](src/solar_expenses.png)
 
 
 
